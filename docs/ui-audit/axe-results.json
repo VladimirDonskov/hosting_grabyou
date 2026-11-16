@@ -1,0 +1,74 @@
+[
+  {
+    "width": 390,
+    "theme": "light",
+    "route": "/",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "route": "/download",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "route": "/partners",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "route": "/",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "route": "/download",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "route": "/partners",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "route": "/",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "route": "/download",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "route": "/partners",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "route": "/",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "route": "/download",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "route": "/partners",
+    "violations": []
+  }
+]
