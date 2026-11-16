@@ -9,6 +9,7 @@ const DEFAULT_ORIGINS = [
   'https://grabyou.ru',
   'https://www.grabyou.ru',
   'https://justtip-ceo.github.io',
+  'https://vladimirdonskov.github.io',
 ];
 
 function allowedOrigins() {

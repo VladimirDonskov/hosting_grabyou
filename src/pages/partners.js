@@ -1,10 +1,11 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
   IconBread,
+  IconCheck,
   IconClock,
   IconCoffee,
   IconFlower,
@@ -97,59 +98,106 @@ const faq = [
 ];
 
 /* ─── Модалка-анкета ─── */
-function PartnerFormModal({open, onClose}) {
+function PartnerFormModal({open, motion, onClose}) {
   const {siteConfig} = useDocusaurusContext();
+  const dialogRef = useRef(null);
+  const successRef = useRef(null);
   const [form, setForm] = useState({name: '', address: '', phone: '', email: ''});
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | sending | success | error
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    dialog.querySelector('input[name="name"]')?.focus({preventScroll: true});
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open && status === 'success') successRef.current?.focus();
+  }, [open, status]);
 
-  const set = (key) => (e) => setForm({...form, [key]: e.target.value});
+  const close = () => {
+    // Keep an unfinished draft (and an in-flight request) when closing.
+    // A received application is cleared only after its confirmation is dismissed.
+    if (status === 'success') {
+      setForm({name: '', address: '', phone: '', email: ''});
+      setConsent(false);
+      setStatus('idle');
+    }
+    onClose();
+  };
+
+  const set = (key) => (e) => {
+    e.target.setCustomValidity('');
+    setForm({...form, [key]: e.target.value});
+    if (status === 'error') setStatus('idle');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!consent || status === 'sending') return;
+    const data = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()]));
+    for (const [key, value] of Object.entries(data)) {
+      const input = e.currentTarget.elements.namedItem(key);
+      input.setCustomValidity(value ? '' : 'Введите значение — одних пробелов недостаточно.');
+      if (!input.reportValidity()) return;
+    }
+    const phone = e.currentTarget.elements.namedItem('phone');
+    const digits = data.phone.replace(/\D/g, '');
+    phone.setCustomValidity(/^[+\d\s().-]+$/.test(data.phone) && digits.length >= 7 && digits.length <= 15
+      ? '' : 'Введите номер телефона: от 7 до 15 цифр, можно с кодом страны.');
+    if (!phone.reportValidity()) return;
+    setForm(data);
     setStatus('sending');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch(siteConfig.customFields.partnerApiUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(form),
+        body: JSON.stringify(data),
+        signal: controller.signal,
       });
       const json = await res.json().catch(() => ({}));
       setStatus(res.ok && json.ok ? 'success' : 'error');
     } catch {
       setStatus('error');
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true">
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Закрыть">
-          ×
+    <dialog
+      ref={dialogRef}
+      className={styles.modal}
+      data-motion={motion}
+      aria-labelledby="partner-form-title"
+      aria-describedby="partner-form-description"
+      onCancel={(e) => {e.preventDefault(); close();}}
+      onClick={(e) => {
+        if (e.target !== e.currentTarget) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) close();
+      }}>
+        <button type="button" className={styles.modalClose} onClick={close} aria-label="Закрыть форму">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
 
         {status === 'success' ? (
           <div>
-            <Heading as="h3" className={styles.modalTitle}>
+            <span className={styles.successIcon} aria-hidden="true"><IconCheck size={28} /></span>
+            <h2 id="partner-form-title" className={styles.modalTitle} tabIndex={-1} ref={successRef}>
               Заявка отправлена!
-            </Heading>
-            <p className={styles.modalSub}>
+            </h2>
+            <p id="partner-form-description" className={styles.modalSub} role="status">
               Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее время.
               Если хотите ускорить — напишите нам в{' '}
               <Link href="https://t.me/GrabYouOfficial" target="_blank" rel="noopener noreferrer">
@@ -157,26 +205,32 @@ function PartnerFormModal({open, onClose}) {
               </Link>
               .
             </p>
-            <button type="button" className={styles.submit} onClick={onClose}>
+            <button type="button" className={styles.submit} onClick={close}>
               Отлично
             </button>
           </div>
         ) : (
           <>
-            <Heading as="h3" className={styles.modalTitle}>
-              Присоединяйтесь к нам сегодня!
-            </Heading>
-            <p className={styles.modalSub}>
+            <h2 id="partner-form-title" className={styles.modalTitle}>
+              Стать партнёром
+            </h2>
+            <p id="partner-form-description" className={styles.modalSub}>
               Оставьте заявку — мы свяжемся с вами и подробно расскажем про формат,
               условия и первые шаги.
             </p>
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={handleSubmit} className={styles.form} aria-busy={status === 'sending'}>
+              <p className={styles.formHint}>Все поля обязательны</p>
               <label className={styles.label}>
                 Название кафе / ресторана / магазина
                 <input
                   className={styles.input}
                   type="text"
+                  name="name"
+                  autoComplete="organization"
+                  autoFocus
+                  maxLength={300}
+                  readOnly={status === 'sending'}
                   required
                   value={form.name}
                   onChange={set('name')}
@@ -189,6 +243,10 @@ function PartnerFormModal({open, onClose}) {
                 <input
                   className={styles.input}
                   type="text"
+                  name="address"
+                  autoComplete="street-address"
+                  maxLength={300}
+                  readOnly={status === 'sending'}
                   required
                   value={form.address}
                   onChange={set('address')}
@@ -201,6 +259,10 @@ function PartnerFormModal({open, onClose}) {
                 <input
                   className={styles.input}
                   type="tel"
+                  name="phone"
+                  autoComplete="tel"
+                  maxLength={300}
+                  readOnly={status === 'sending'}
                   required
                   value={form.phone}
                   onChange={set('phone')}
@@ -213,6 +275,10 @@ function PartnerFormModal({open, onClose}) {
                 <input
                   className={styles.input}
                   type="email"
+                  name="email"
+                  autoComplete="email"
+                  maxLength={300}
+                  readOnly={status === 'sending'}
                   required
                   value={form.email}
                   onChange={set('email')}
@@ -224,6 +290,7 @@ function PartnerFormModal({open, onClose}) {
                 <input
                   type="checkbox"
                   checked={consent}
+                  disabled={status === 'sending'}
                   onChange={(e) => setConsent(e.target.checked)}
                   required
                 />
@@ -231,7 +298,7 @@ function PartnerFormModal({open, onClose}) {
               </label>
 
               {status === 'error' && (
-                <p className={styles.error}>
+                <p className={styles.error} role="alert">
                   Не получилось отправить. Попробуйте ещё раз или напишите нам в{' '}
                   <Link href="https://t.me/GrabYouOfficial" target="_blank" rel="noopener noreferrer">
                     Telegram
@@ -241,20 +308,25 @@ function PartnerFormModal({open, onClose}) {
                 </p>
               )}
 
-              <button type="submit" className={styles.submit} disabled={!consent || status === 'sending'}>
+              <p className={styles.formStatus} role="status">{status === 'sending' ? 'Отправляем заявку. Это может занять несколько секунд.' : ''}</p>
+              <button type="submit" className={styles.submit} disabled={status === 'sending'}>
                 {status === 'sending' ? 'Отправляем…' : 'Отправить заявку'}
               </button>
             </form>
           </>
         )}
-      </div>
-    </div>
+    </dialog>
   );
 }
 
 export default function PartnersPage() {
   const [formOpen, setFormOpen] = useState(false);
+  const [formMotion, setFormMotion] = useState(false);
   const [faqOpen, setFaqOpen] = useState(null);
+  const openForm = (e) => {
+    setFormMotion(e.detail > 0);
+    setFormOpen(true);
+  };
 
   return (
     <Layout
@@ -265,7 +337,6 @@ export default function PartnersPage() {
           {/* ─── HERO ─── */}
           <section className={styles.hero}>
             <div className={styles.heroCard}>
-              <span className={styles.heroBadge}>Для локального бизнеса</span>
               <Heading as="h1" className={styles.heroTitle}>
                 Превращайте горящие предложения в{' '}
                 <span className={styles.heroMark}>выручку</span>
@@ -279,7 +350,7 @@ export default function PartnersPage() {
                 <button
                   type="button"
                   className="button button--primary button--lg"
-                  onClick={() => setFormOpen(true)}>
+                  onClick={openForm}>
                   Стать партнёром
                 </button>
                 <Link className="button button--secondary button--lg" to="#how">
@@ -297,8 +368,6 @@ export default function PartnersPage() {
           {/* ─── ВЫГОДЫ ─── */}
           <section className={styles.section}>
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>01</span>
-              <div className={styles.eyebrow}>Почему это выгодно</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Бизнесу это приносит деньги
               </Heading>
@@ -324,8 +393,6 @@ export default function PartnersPage() {
           {/* ─── КАК РАБОТАЕТ ─── */}
           <section className={styles.section} id="how">
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>02</span>
-              <div className={styles.eyebrow}>Как это работает</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Четыре шага до первой продажи
               </Heading>
@@ -346,8 +413,6 @@ export default function PartnersPage() {
           {/* ─── КОМУ ПОДХОДИТ ─── */}
           <section className={styles.section}>
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>03</span>
-              <div className={styles.eyebrow}>Кому подходит</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Любой бизнес с «горящими» позициями
               </Heading>
@@ -369,8 +434,6 @@ export default function PartnersPage() {
           {/* ─── FAQ ─── */}
           <section className={styles.section}>
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>04</span>
-              <div className={styles.eyebrow}>Вопросы и ответы</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Коротко о главном
               </Heading>
@@ -381,12 +444,14 @@ export default function PartnersPage() {
                   <button
                     type="button"
                     className={styles.faqQ}
+                    id={`partner-faq-question-${i}`}
                     aria-expanded={faqOpen === i}
+                    aria-controls={`partner-faq-answer-${i}`}
                     onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
-                    {f.q}
+                    <span className={styles.faqText}>{f.q}</span>
                     <span className={styles.faqPlus} aria-hidden="true" />
                   </button>
-                  <div className={styles.faqAWrap}>
+                  <div className={styles.faqAWrap} id={`partner-faq-answer-${i}`} role="region" aria-labelledby={`partner-faq-question-${i}`} hidden={faqOpen !== i}>
                     <p className={styles.faqA}>{f.a}</p>
                   </div>
                 </div>
@@ -397,7 +462,6 @@ export default function PartnersPage() {
           {/* ─── CTA ─── */}
           <section className={`${styles.section} ${styles.sectionLast}`}>
             <div className={styles.ctaCard}>
-              <div className={styles.eyebrow}>Начнём?</div>
               <Heading as="h2" className={styles.ctaTitle}>
                 Станьте партнёром GrabYou
               </Heading>
@@ -409,7 +473,7 @@ export default function PartnersPage() {
                 <button
                   type="button"
                   className="button button--primary button--lg"
-                  onClick={() => setFormOpen(true)}>
+                  onClick={openForm}>
                   Оставить заявку
                 </button>
                 <Link
@@ -427,7 +491,7 @@ export default function PartnersPage() {
           </section>
         </div>
 
-        <PartnerFormModal open={formOpen} onClose={() => setFormOpen(false)} />
+        <PartnerFormModal open={formOpen} motion={formMotion} onClose={() => setFormOpen(false)} />
       </main>
     </Layout>
   );
