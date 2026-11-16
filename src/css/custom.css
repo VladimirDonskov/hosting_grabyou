@@ -148,7 +148,7 @@
   --gy-radius-sm: 8px;
   --gy-radius: 14px;
   --gy-radius-lg: 22px;
-  --gy-radius-xl: 32px;
+  --gy-radius-xl: 24px;
   --gy-stroke: 2px;
   --gy-stroke-bold: 3px;
   --gy-offset: 6px;
@@ -157,6 +157,7 @@
   --gy-hard-sm: 4px 4px 0 var(--gy-border);
   --gy-hard-lg: var(--gy-offset-lg) var(--gy-offset-lg) 0 var(--gy-border);
   --gy-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --gy-focus: var(--gy-forest-700);
 
   /* ── мост в токены Docusaurus / Infima ── */
   --ifm-color-primary: var(--gy-green-600);
@@ -195,6 +196,7 @@
    Тёмная тема — «чернила + лайм»
    ──────────────────────────────────────────────────────────────────────── */
 [data-theme='dark'] {
+  --gy-focus: var(--gy-lime-400);
   --gy-bg: var(--gy-ink-900);
   --gy-bg-alt: #071a0f;
   --gy-surface: #0a1f13;
@@ -244,13 +246,6 @@ html {
     scroll-behavior: auto;
   }
 
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
 }
 
 html,
@@ -297,10 +292,26 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--gy-accent);
+  outline: 3px solid var(--gy-focus);
   outline-offset: 3px;
   border-radius: 4px;
 }
+
+html { scroll-padding-top: calc(var(--ifm-navbar-height) + 1rem); }
+
+body { caret-color: var(--gy-focus); }
+
+a { text-underline-offset: 0.2em; }
+
+button, input, a { -webkit-tap-highlight-color: transparent; }
+
+button, input { font: inherit; }
+
+input { min-width: 0; }
+
+:where(h1, h2, h3, p) { overflow-wrap: anywhere; }
+
+[class*='skipToContent']:focus { z-index: 1000; }
 
 img {
   max-width: 100%;
@@ -354,10 +365,13 @@ img {
   padding: 0.45rem 0.85rem;
   border-radius: 999px;
   border: var(--gy-stroke) solid transparent;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .navbar__link:hover {
-  color: var(--gy-text);
+  color: var(--gy-ink-900);
   background: var(--gy-accent);
   border-color: var(--gy-border);
 }
@@ -385,8 +399,8 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   margin-left: 0.4rem;
   border-radius: 999px;
@@ -410,6 +424,8 @@ img {
 
 /* тумблер темы */
 .navbar__items--right [class*='toggleButton'] {
+  width: 44px;
+  height: 44px;
   border: var(--gy-stroke) solid var(--gy-border);
   border-radius: 999px;
   color: var(--gy-text);
@@ -440,6 +456,9 @@ img {
   letter-spacing: -0.01em;
   border-radius: 999px;
   border: var(--gy-stroke) solid var(--gy-border);
+  min-height: 48px;
+  white-space: normal;
+  line-height: 1.4;
   transition:
     transform 0.16s var(--gy-ease),
     box-shadow 0.16s var(--gy-ease),
@@ -518,6 +537,12 @@ img {
 
 .footer a {
   color: var(--gy-lime-300);
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding-block: 0.35rem;
+  min-height: 44px;
 }
 
 .footer a:hover {
@@ -537,12 +562,12 @@ img {
 }
 
 :root {
-  --gy-wordmark: url('/img/brand/logo-wordmark.svg');
+  --gy-wordmark: url('../../static/img/brand/logo-wordmark.svg');
 }
 
 /* модульный паттерн бренда */
 .gyPattern {
-  background-image: url('/img/brand/pattern-blocks.svg');
+  background-image: url('../../static/img/brand/pattern-blocks.svg');
   background-size: 180px auto;
 }
 
@@ -575,133 +600,78 @@ table {
 }
 
 /* ==========================================================================
-   Адаптив навбара — оставляем горизонтальное меню вместо бургера
+   Мобильная навигация использует меню Docusaurus с управлением фокусом
    ========================================================================== */
 @media (max-width: 996px) {
   :root {
-    --ifm-navbar-height: 3.75rem;
+    --ifm-navbar-height: 4.25rem;
     --gy-offset: 5px;
     --gy-offset-lg: 7px;
   }
 
-  .navbar {
-    padding: 0 0.6rem;
+  .navbar { padding-inline: 1rem; }
+  .navbar__items > .navbar__item { display: none; }
+  .navbar__brand { margin-inline: 0.5rem auto; }
+  .navbar__logo img { height: 36px; }
+  .navbar__toggle, .navbar-sidebar__close {
+    width: 44px;
+    height: 44px;
   }
-
-  .navbar__inner {
-    display: flex;
-    flex-wrap: nowrap;
+  .navbar-sidebar { --ifm-navbar-sidebar-width: min(100vw, 25rem); }
+  .navbar-sidebar .menu__link {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
     align-items: center;
-    gap: 0.3rem;
+    font-weight: 700;
   }
-
-  .navbar__brand {
-    flex: 0 0 auto;
-    margin-right: 0.35rem;
+  .navbar-sidebar .navbar-telegram-link {
+    width: auto;
+    justify-content: flex-start;
+    border: 0;
+    margin: 0;
   }
-
-  .navbar__logo img {
-    height: 32px;
+  .navbar-sidebar .navbar-telegram-link::after {
+    content: 'Telegram-канал';
+    margin-left: 0.75rem;
   }
+  .navbar-sidebar [class*='toggleButton'] { width: 44px; height: 44px; }
+}
 
-  .navbar__items--left,
-  .navbar__items--right {
-    display: flex !important;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 0.2rem;
-  }
-
-  .navbar__items--right {
-    margin-left: auto;
-  }
-
-  .navbar__item {
-    display: flex !important;
-    align-items: center;
-    flex: 0 0 auto;
-  }
-
-  .navbar__link {
-    white-space: nowrap;
-    padding: 0.32rem 0.6rem;
-    font-size: 0.84rem;
-  }
-
-  .navbar-telegram-link {
-    width: 32px;
-    height: 32px;
-    margin-left: 0.2rem;
-  }
-
-  .navbar-telegram-link svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  /* Docusaurus на мобильном прячет переключатель темы в боковое меню,
-     а боковое меню у нас отключено — возвращаем его в шапку */
-  .navbar__items--right > [class*='colorModeToggle'],
-  .navbar__items--right [class*='toggleButton'] {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-  }
-
-  .navbar__items--right [class*='toggleButton'] {
-    width: 32px;
-    height: 32px;
-    margin-left: 0.2rem;
-  }
-
-  .navbar__toggle,
-  .navbar-sidebar,
-  .navbar-sidebar__backdrop {
-    display: none !important;
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .button:hover, .navbar__link.navbar-cta:hover, .navbar-telegram-link:hover {
+    transform: none;
   }
 }
 
-@media (max-width: 500px) {
-  .navbar__link {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.78rem;
-  }
-
-  .navbar__logo img {
-    height: 27px;
-  }
-
-  /* На узком экране длинная подпись не влезает в кнопку — пусть переносится,
-     а не обрезается (Infima по умолчанию запрещает перенос) */
-  .button {
-    white-space: normal;
-    line-height: 1.25;
-    text-align: center;
-  }
-
-  /* страховка от разрыва длинных слов в заголовках */
-  h1,
-  h2,
-  h3 {
-    hyphens: auto;
-    overflow-wrap: normal;
-  }
+/* Нативный dialog изолирует меню от страницы и возвращает фокус при закрытии. */
+.navbar-sidebar.gyMobileMenu {
+  inset: 0 auto 0 0;
+  margin: 0;
+  padding: 0;
+  width: var(--ifm-navbar-sidebar-width);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-right: var(--gy-stroke) solid var(--gy-border);
+  border-radius: 0;
+  color: var(--gy-text);
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
 }
 
-@media (max-width: 360px) {
-  .navbar {
-    padding: 0 0.35rem;
-  }
+.gyMobileMenu::backdrop { background: rgba(1, 14, 5, 0.6); }
+.navbar-sidebar--show > .navbar-sidebar__backdrop { display: none; }
 
-  .navbar__link {
-    padding: 0.28rem 0.42rem;
-    font-size: 0.74rem;
-  }
-
-  .navbar-telegram-link,
-  .navbar__items--right [class*='toggleButton'] {
-    width: 29px;
-    height: 29px;
-  }
+.gyMobileMenu .navbar-sidebar__items {
+  display: block;
+  height: calc(100dvh - var(--ifm-navbar-height));
+  overflow-y: auto;
+  transform: none;
+  transition: none;
 }
+
+.gyMobileMenu .navbar-sidebar__item { width: 100%; }
+.gyMobileMenu .navbar-sidebar__close svg g { stroke: var(--gy-text); }

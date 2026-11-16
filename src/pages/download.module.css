@@ -6,8 +6,8 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding: clamp(2.5rem, 6vw, 4.5rem) 0 clamp(4rem, 9vw, 7rem);
-  background: var(--gy-lime-200);
+  padding: clamp(2rem, 4vw, 3.5rem) 0 clamp(3rem, 6vw, 5rem);
+  background: var(--gy-bg-alt);
   min-height: 78vh;
 }
 
@@ -19,11 +19,11 @@
   position: absolute;
   inset: -12% -6% auto -6%;
   z-index: -2;
-  opacity: 0.34;
+  opacity: 0.16;
 }
 
 [data-theme='dark'] .map {
-  opacity: 0.32;
+  opacity: 0.2;
 }
 
 .mapSvg {
@@ -38,9 +38,9 @@
   z-index: -1;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--gy-lime-200) 45%, transparent) 0%,
-    color-mix(in srgb, var(--gy-lime-200) 80%, transparent) 45%,
-    var(--gy-lime-200) 100%
+    color-mix(in srgb, var(--gy-bg-alt) 45%, transparent) 0%,
+    color-mix(in srgb, var(--gy-bg-alt) 80%, transparent) 45%,
+    var(--gy-bg-alt) 100%
   );
 }
 
@@ -62,8 +62,8 @@
 
 .mark {
   display: block;
-  margin: 0 auto 1.25rem;
-  width: clamp(68px, 9vw, 88px);
+  margin: 0 auto 1.5rem;
+  width: 64px;
   height: auto;
   /* обводка нарисована внутри самого SVG — рамка на img давала бы
      скругление, не совпадающее с плашкой иконки */
@@ -72,9 +72,9 @@
 
 .title {
   margin: 0;
-  font-size: clamp(2.1rem, 6vw, 3.6rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
   font-weight: 900;
 }
@@ -87,29 +87,12 @@
   color: var(--gy-text-soft);
 }
 
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-top: 1.35rem;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.9rem;
-  border: var(--gy-stroke) solid var(--gy-border);
-  border-radius: 999px;
-  background: var(--gy-surface);
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: var(--gy-text);
-}
-
-.pill svg {
-  color: var(--gy-deep);
+.deviceGuide {
+  margin: 1.25rem auto 0;
+  max-width: 38rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--gy-text-soft);
 }
 
 /* ── бенто-сетка ── */
@@ -122,27 +105,26 @@
 }
 
 .card {
+  min-width: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   padding: clamp(1.25rem, 2.6vw, 1.85rem);
-  border: var(--gy-stroke-bold) solid var(--gy-border);
-  border-radius: var(--gy-radius-xl);
+  border: var(--gy-stroke) solid var(--gy-border);
+  border-radius: var(--gy-radius-lg);
   background: var(--gy-surface);
   color: var(--gy-text);
   text-decoration: none;
   box-shadow: var(--gy-hard-sm);
   transition:
     transform 0.18s var(--gy-ease),
-    box-shadow 0.18s var(--gy-ease);
+    background-color 0.18s var(--gy-ease);
 }
 
 .card:hover {
   color: var(--gy-text);
   text-decoration: none;
-  transform: translate(-4px, -4px);
-  box-shadow: var(--gy-hard);
 }
 
 .cardFeatured {
@@ -157,21 +139,6 @@
 
 .cardFeatured:hover {
   color: var(--gy-ink-900);
-}
-
-.badge {
-  position: absolute;
-  top: -0.7rem;
-  right: 1.25rem;
-  padding: 0.2rem 0.7rem;
-  border: var(--gy-stroke) solid var(--gy-ink-900);
-  border-radius: 999px;
-  background: var(--gy-urgent);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 .cardIcon {
@@ -211,6 +178,8 @@
   align-content: start;
   gap: 0.25rem;
   flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* в строке (главная карточка) тексту нужна минимальная ширина */
@@ -218,25 +187,25 @@
   flex-basis: 14rem;
 }
 
-.kicker {
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.device {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--gy-text-dim);
 }
 
-.cardFeatured .kicker {
+.cardFeatured .device {
   color: var(--gy-forest-700);
 }
 
 .cardTitle {
+  color: inherit;
+  margin: 0;
   font-family: var(--gy-font-display);
-  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
-  font-weight: 900;
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.1;
-  text-transform: uppercase;
+  line-height: 1.3;
 }
 
 .cardDesc {
@@ -251,10 +220,14 @@
 }
 
 .cardCta {
+  max-width: 100%;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   align-self: flex-start;
+  min-height: 44px;
   padding: 0.6rem 1.15rem;
   border: var(--gy-stroke) solid var(--gy-border);
   border-radius: 999px;
@@ -290,6 +263,9 @@
 }
 
 .backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: 800;
   font-size: 0.94rem;
   color: var(--gy-text-soft);
@@ -310,9 +286,20 @@
     align-items: flex-start;
   }
 
+  .cardFeatured .cardBody {
+    flex-basis: auto;
+  }
+
+  .cardCta,
   .cardFeatured .cardCta {
     align-self: stretch;
     justify-content: center;
     margin-left: 0;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .card:hover {
+    transform: translateY(-2px);
   }
 }

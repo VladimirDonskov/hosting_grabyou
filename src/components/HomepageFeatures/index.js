@@ -1,4 +1,3 @@
-import {useEffect, useRef, useState} from 'react';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -15,108 +14,11 @@ import {
   IconMail,
   IconPin,
   IconQr,
-  IconSparkle,
   IconStore,
   IconTelegram,
   IconZap,
 } from '@site/src/components/brand/icons';
 import styles from './styles.module.css';
-
-/* ─── Появление блоков при скролле ─── */
-function useReveal() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add(styles.revealed);
-          obs.unobserve(el);
-        }
-      },
-      {threshold: 0.12},
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return ref;
-}
-
-function Reveal({children, delay = 0, className = '', as: Tag = 'div'}) {
-  const ref = useReveal();
-  return (
-    <Tag ref={ref} className={`${styles.reveal} ${className}`} style={{transitionDelay: `${delay}ms`}}>
-      {children}
-    </Tag>
-  );
-}
-
-/* ─── Полоса прогресса чтения ─── */
-function ScrollProgress() {
-  const barRef = useRef(null);
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const h = document.documentElement;
-        const max = h.scrollHeight - h.clientHeight;
-        if (barRef.current) {
-          barRef.current.style.transform = `scaleX(${max > 0 ? h.scrollTop / max : 0})`;
-        }
-      });
-    };
-    window.addEventListener('scroll', onScroll, {passive: true});
-    onScroll();
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
-  return (
-    <div className={styles.progress} aria-hidden="true">
-      <div ref={barRef} className={styles.progressBar} />
-    </div>
-  );
-}
-
-/* ─── Счётчик ─── */
-function CountUp({to, prefix = '', suffix = '', duration = 1300}) {
-  const ref = useRef(null);
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let raf = 0;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        obs.disconnect();
-        const start = performance.now();
-        const tick = (now) => {
-          const t = Math.min((now - start) / duration, 1);
-          setVal(Math.round(to * (1 - Math.pow(1 - t, 3))));
-          if (t < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      },
-      {threshold: 0.4},
-    );
-    obs.observe(el);
-    return () => {
-      obs.disconnect();
-      cancelAnimationFrame(raf);
-    };
-  }, [to, duration]);
-  return (
-    <span ref={ref}>
-      {prefix}
-      {val}
-      {suffix}
-    </span>
-  );
-}
 
 /* ─── Данные ─── */
 const tickerItems = [
@@ -222,18 +124,17 @@ const mapPins = [
 ];
 
 export default function HomepageFeatures() {
-  const promotionsImg = useBaseUrl('/img/grabyou/promotions_nearby.png');
-  const myOrderImg = useBaseUrl('/img/grabyou/my_order.png');
-  const qrScannerImg = useBaseUrl('/img/grabyou/qr_scanner.png');
-  const offerImg = useBaseUrl('/img/grabyou/offer-screen.png');
-  const paymentImg = useBaseUrl('/img/grabyou/payment-screen.png');
-  const aiPicImg = useBaseUrl('/img/grabyou/ai_pic.png');
+  const promotionsImg = useBaseUrl('/img/grabyou/promotions_nearby.webp');
+  const myOrderImg = useBaseUrl('/img/grabyou/my_order.webp');
+  const qrScannerImg = useBaseUrl('/img/grabyou/qr_scanner.webp');
+  const offerImg = useBaseUrl('/img/grabyou/offer-screen.webp');
+  const paymentImg = useBaseUrl('/img/grabyou/payment-screen.webp');
+  const aiPicImg = useBaseUrl('/img/grabyou/ai_pic.webp');
 
-  const ticker = [...tickerItems, ...tickerItems, ...tickerItems];
+  const ticker = tickerItems;
 
   return (
     <div className={styles.page}>
-      <ScrollProgress />
 
       {/* ═══ HERO ═══ */}
       <section className={styles.hero}>
@@ -245,10 +146,6 @@ export default function HomepageFeatures() {
         <div className="container">
           <div className={styles.heroGrid}>
             <div className={styles.heroCard}>
-              <span className={styles.heroBadge}>
-                <span className={styles.heroBadgeDot} aria-hidden="true" />
-                Сервис срочных предложений рядом
-              </span>
               <Heading as="h1" className={styles.heroTitle}>
                 Хватай
                 <br />
@@ -261,30 +158,26 @@ export default function HomepageFeatures() {
                 Кофейни, пекарни, цветочные, кафе — предложения, которые нужно
                 забрать сегодня.
               </p>
-              <ul className={styles.heroList}>
-                <li>видно расстояние и сколько времени осталось</li>
-                <li>цена ниже — потому что предложение срочное</li>
-                <li>оплатил в приложении — пришёл и забрал</li>
-              </ul>
               <div className={styles.heroButtons}>
                 <Link className="button button--primary button--lg" to="/download">
-                  Скачать приложение
+                  Открыть GrabYou
                 </Link>
                 <Link className="button button--secondary button--lg" to="#how-it-works">
                   Как это работает
                 </Link>
               </div>
+              <p className={styles.platformNote}>RuStore для Android · Telegram и VK на любом устройстве</p>
             </div>
 
             <div className={styles.heroVisual}>
-              {/* плашки живут внутри телефонов: держатся у корпуса и плавают вместе с ним */}
+              {/* плашки живут внутри телефонов: держатся у корпуса и сохраняют привязку при изменении размера */}
               <div className={styles.phone}>
-                <img src={promotionsImg} alt="Лента предложений рядом в GrabYou" loading="eager" />
+                <img src={promotionsImg} alt="Лента предложений рядом в GrabYou" loading="eager" fetchPriority="high" width="816" height="1713" />
                 <span className={`${styles.tag} ${styles.tagA}`}>−40%</span>
                 <span className={`${styles.tag} ${styles.tagC}`}>осталось 2 шт.</span>
               </div>
               <div className={`${styles.phone} ${styles.phoneSmall}`}>
-                <img src={qrScannerImg} alt="Выдача заказа по QR-коду" loading="lazy" />
+                <img src={qrScannerImg} alt="Выдача заказа по QR-коду" loading="lazy" width="816" height="1713" />
                 <span className={`${styles.tag} ${styles.tagB}`}>350 м от вас</span>
               </div>
             </div>
@@ -292,7 +185,7 @@ export default function HomepageFeatures() {
         </div>
       </section>
 
-      {/* ═══ БЕГУЩАЯ СТРОКА ═══ */}
+      {/* ═══ ПОЛОСА СЕРВИСА ═══ */}
       <div className={styles.ticker} aria-hidden="true">
         <div className={styles.tickerTrack}>
           {ticker.map((item, i) => (
@@ -308,45 +201,15 @@ export default function HomepageFeatures() {
       <section className={styles.statsSection}>
         <div className="container">
           <div className={styles.statsRow}>
-            {stats.map((s, i) => (
-              <Reveal key={s.label} delay={i * 80}>
+            {stats.map((s) => (
+              <div key={s.label}>
                 <div className={styles.statItem}>
                   <div className={styles.statNum}>
-                    <CountUp to={s.to} prefix={s.prefix} suffix={s.suffix} />
+                    {s.prefix}{s.to}{s.suffix}
                   </div>
                   <div className={styles.statLabel}>{s.label}</div>
                 </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ ЦЕННОСТИ ═══ */}
-      <section className={styles.section}>
-        <div className="container">
-          <Reveal>
-            <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>01</span>
-              <div className={styles.eyebrow}>Наши ценности</div>
-              <Heading as="h2" className={styles.sectionTitle}>
-                В основе GrabYou
-              </Heading>
-            </header>
-          </Reveal>
-          <div className={styles.valuesGrid}>
-            {values.map((v, i) => (
-              <Reveal key={v.title} delay={i * 80}>
-                <article className={styles.valueCard} data-tone={v.tone}>
-                  <span className={styles.valueIcon}>
-                    <v.Icon size={24} />
-                  </span>
-                  <Heading as="h3" className={styles.cardTitle}>
-                    {v.title}
-                  </Heading>
-                  <p className={styles.cardText}>{v.text}</p>
-                </article>
-              </Reveal>
+              </div>
             ))}
           </div>
         </div>
@@ -355,10 +218,8 @@ export default function HomepageFeatures() {
       {/* ═══ КАК ЭТО РАБОТАЕТ ═══ */}
       <section className={styles.section} id="how-it-works">
         <div className="container">
-          <Reveal>
+          <div>
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>02</span>
-              <div className={styles.eyebrow}>Как это работает</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Три шага. Меньше минуты.
               </Heading>
@@ -366,11 +227,11 @@ export default function HomepageFeatures() {
                 Никаких звонков менеджерам, подтверждений по почте и ожидания ответа.
               </p>
             </header>
-          </Reveal>
+          </div>
 
           <div className={styles.stepsGrid}>
-            {steps.map((step, i) => (
-              <Reveal key={step.number} delay={i * 90}>
+            {steps.map((step) => (
+              <div key={step.number}>
                 <article className={styles.stepCard}>
                   <span className={styles.stepNum}>{step.number}</span>
                   <span className={styles.stepIcon}>
@@ -381,22 +242,50 @@ export default function HomepageFeatures() {
                   </Heading>
                   <p className={styles.cardText}>{step.description}</p>
                 </article>
-              </Reveal>
+              </div>
             ))}
           </div>
 
-          <div className={styles.shots}>
+          <div className={styles.shots} tabIndex={0} role="region" aria-label="Экраны приложения: предложение, оплата и заказ. Можно листать по горизонтали.">
             {[
               [offerImg, 'Карточка предложения'],
               [paymentImg, 'Оплата в приложении'],
               [myOrderImg, 'Мой заказ и QR-код'],
             ].map(([src, alt], i) => (
-              <Reveal key={alt} delay={i * 100}>
+              <div key={alt}>
                 <figure className={styles.shot}>
                   <span className={styles.shotNum}>0{i + 1}</span>
-                  <img src={src} alt={alt} loading="lazy" />
+                  <img src={src} alt={alt} loading="lazy" width="816" height="1713" />
                 </figure>
-              </Reveal>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ ЦЕННОСТИ ═══ */}
+      <section className={styles.section}>
+        <div className="container">
+          <div>
+            <header className={styles.sectionHead}>
+              <Heading as="h2" className={styles.sectionTitle}>
+                В основе GrabYou
+              </Heading>
+            </header>
+          </div>
+          <div className={styles.valuesGrid}>
+            {values.map((v) => (
+              <div key={v.title}>
+                <article className={styles.valueCard} data-tone={v.tone}>
+                  <span className={styles.valueIcon}>
+                    <v.Icon size={24} />
+                  </span>
+                  <Heading as="h3" className={styles.cardTitle}>
+                    {v.title}
+                  </Heading>
+                  <p className={styles.cardText}>{v.text}</p>
+                </article>
+              </div>
             ))}
           </div>
         </div>
@@ -405,10 +294,8 @@ export default function HomepageFeatures() {
       {/* ═══ КАРТА — фирменный блок ═══ */}
       <section className={styles.section}>
         <div className="container">
-          <Reveal>
+          <div>
             <header className={styles.sectionHead}>
-              <span className={styles.sectionIndex}>03</span>
-              <div className={styles.eyebrow}>Рядом с вами</div>
               <Heading as="h2" className={styles.sectionTitle}>
                 Начинаем с Петербурга
               </Heading>
@@ -417,9 +304,10 @@ export default function HomepageFeatures() {
                 и сколько осталось времени.
               </p>
             </header>
-          </Reveal>
+          </div>
 
-          <Reveal delay={80}>
+          <div>
+            <p className={styles.mapNote}>Пример предложений на карте. Актуальные цены и наличие — в приложении.</p>
             <div className={styles.mapCard}>
               <SpbMap className={styles.mapSvg} />
               <div className={styles.mapPins}>
@@ -450,10 +338,10 @@ export default function HomepageFeatures() {
                 <span className={styles.mapLegendNote}>дальше — другие города</span>
               </div>
             </div>
-          </Reveal>
+          </div>
 
           {/* на узких экранах вместо подписей на карте — лента предложений */}
-          <div className={styles.offerStrip} aria-label="Предложения рядом">
+          <div className={styles.offerStrip} tabIndex={0} role="region" aria-label="Примеры предложений. Можно листать по горизонтали.">
             {mapPins.map((pin) => (
               <div key={pin.title} className={styles.offerChip} data-tone={pin.tone}>
                 <span className={styles.offerDot} aria-hidden="true" />
@@ -463,7 +351,7 @@ export default function HomepageFeatures() {
             ))}
           </div>
 
-          <Reveal delay={140}>
+          <div>
             <div className={styles.catRow}>
               {categories.map((c) => (
                 <span key={c.label} className={styles.catChip}>
@@ -471,21 +359,18 @@ export default function HomepageFeatures() {
                 </span>
               ))}
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
       {/* ═══ GRABAI ═══ */}
       <section className={styles.section}>
         <div className="container">
-          <Reveal>
+          <div>
             <div className={styles.aiCard}>
               <div className={styles.aiContent}>
-                <div className={styles.eyebrow}>
-                  <IconSparkle size={16} /> GrabAI — встроенный ИИ
-                </div>
                 <Heading as="h2" className={styles.aiTitle}>
-                  Не знаешь что хочешь?
+                  GrabAI: не знаешь что хочешь?
                   <br />
                   Просто напиши
                 </Heading>
@@ -501,29 +386,25 @@ export default function HomepageFeatures() {
                   <div className={`${styles.bubble} ${styles.bubbleUser}`}>
                     букет подруге вечером до 1000 ₽
                   </div>
-                  <div className={`${styles.bubble} ${styles.bubbleTyping}`}>
-                    <span />
-                    <span />
-                    <span />
-                  </div>
+
                 </div>
               </div>
               <div className={styles.aiVisual}>
-                <img src={aiPicImg} alt="GrabAI" loading="lazy" />
+                <img src={aiPicImg} alt="GrabAI" loading="lazy" width="816" height="1713" />
                 <span className={`${styles.tag} ${styles.aiTagA}`}>нашёл 6 рядом</span>
                 <span className={`${styles.tag} ${styles.aiTagB}`}>−35%</span>
               </div>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
       {/* ═══ CTA ═══ */}
       <section className={styles.section}>
         <div className="container">
-          <Reveal>
+          <div>
             <div className={styles.ctaCard}>
-              <div className={styles.eyebrow}>
+              <div className={styles.featureNote}>
                 <IconClock size={16} /> Скоро запуск
               </div>
               <Heading as="h2" className={styles.ctaTitle}>
@@ -536,7 +417,7 @@ export default function HomepageFeatures() {
               </p>
               <div className={styles.ctaButtons}>
                 <Link className="button button--primary button--lg" to="/download">
-                  Скачать / открыть приложение
+                  Открыть GrabYou
                 </Link>
                 <Link
                   className="button button--secondary button--lg"
@@ -547,17 +428,17 @@ export default function HomepageFeatures() {
                 </Link>
               </div>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
       {/* ═══ ПОМОЩЬ ═══ */}
       <section className={`${styles.section} ${styles.sectionLast}`}>
         <div className="container">
-          <Reveal>
+          <div>
             <div className={styles.helpCard}>
               <div>
-                <div className={styles.eyebrow}>Остались вопросы?</div>
+
                 <Heading as="h2" className={styles.helpTitle}>
                   Не нашли то, что нужно?
                   <br />
@@ -587,7 +468,7 @@ export default function HomepageFeatures() {
                 </Link>
               </div>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
     </div>

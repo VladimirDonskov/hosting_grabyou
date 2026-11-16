@@ -5,7 +5,6 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import SpbMap from '@site/src/components/brand/SpbMap';
 import {
   IconArrow,
-  IconCheck,
   IconRuStore,
   IconTelegram,
   IconVK,
@@ -16,28 +15,29 @@ const channels = [
   {
     key: 'rustore',
     href: 'https://www.rustore.ru/catalog/app/com.grabyou.app',
-    kicker: 'RuStore · Android',
+    device: 'Приложение для Android',
     title: 'Установи из RuStore',
     desc: 'Официальный магазин приложений. Полная версия GrabYou с push-уведомлениями и автообновлениями.',
     cta: 'Открыть в RuStore',
-    badge: 'рекомендуем',
     Icon: IconRuStore,
     featured: true,
   },
   {
     key: 'telegram',
     href: 'https://t.me/GrabYou_bot',
-    kicker: 'Без установки',
+    device: 'На любом устройстве · без установки',
     title: 'Telegram',
     desc: '@GrabYou_bot — прямо в мессенджере, на любом устройстве',
+    cta: 'Открыть в Telegram',
     Icon: IconTelegram,
   },
   {
     key: 'vk',
     href: 'https://vk.com/app54610417',
-    kicker: 'VK Mini App',
+    device: 'VK Mini App · без установки',
     title: 'ВКонтакте',
     desc: 'Запусти в соцсети — ничего не устанавливая',
+    cta: 'Открыть ВКонтакте',
     Icon: IconVK,
   },
 ];
@@ -54,48 +54,40 @@ export default function DownloadPage() {
         <div className={styles.fade} aria-hidden="true" />
 
         <div className="container">
-          <section className={styles.hero}>
+          <section className={styles.hero} aria-labelledby="download-title">
             <img src={useBaseUrl('/img/brand/logo-icon.svg')} alt="" className={styles.mark} width="88" height="88" />
-            <Heading as="h1" className={styles.title}>
+            <h1 id="download-title" className={styles.title}>
               Открой GrabYou
-            </Heading>
+            </h1>
             <p className={styles.subtitle}>
               Работает на любом устройстве — без регистрации и лишних шагов.
               Просто выбери удобный способ.
             </p>
-            <div className={styles.pills}>
-              <span className={styles.pill}>
-                <IconCheck size={15} /> iPhone
-              </span>
-              <span className={styles.pill}>
-                <IconCheck size={15} /> Android
-              </span>
-              <span className={styles.pill}>
-                <IconCheck size={15} /> Компьютер
-              </span>
-            </div>
+            <p className={styles.deviceGuide}>
+              <strong>Android</strong> — RuStore. <strong>iPhone и компьютер</strong> — Telegram или ВКонтакте.
+            </p>
           </section>
 
-          <section className={styles.grid}>
-            {channels.map(({key, href, kicker, title, desc, cta, badge, Icon, featured}) => (
+          <section className={styles.grid} aria-label="Способы открыть GrabYou">
+            {channels.map(({key, href, device, title, desc, cta, Icon, featured}) => (
               <Link
                 key={key}
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={`${cta} (в новой вкладке)`}
                 className={`${styles.card} ${featured ? styles.cardFeatured : ''}`}
                 data-channel={key}>
-                {badge && <span className={styles.badge}>{badge}</span>}
                 <span className={styles.cardIcon}>
                   <Icon size={featured ? 44 : 30} />
                 </span>
-                <span className={styles.cardBody}>
-                  <span className={styles.kicker}>{kicker}</span>
-                  <span className={styles.cardTitle}>{title}</span>
+                <div className={styles.cardBody}>
+                  <Heading as="h2" className={styles.cardTitle}>{title}</Heading>
+                  <span className={styles.device}>{device}</span>
                   <span className={styles.cardDesc}>{desc}</span>
-                </span>
+                </div>
                 <span className={styles.cardCta}>
-                  {cta || 'Открыть'} <IconArrow size={18} />
+                  {cta} <IconArrow size={18} />
                 </span>
               </Link>
             ))}
