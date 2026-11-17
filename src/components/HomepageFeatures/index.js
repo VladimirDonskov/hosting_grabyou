@@ -27,12 +27,10 @@ function usePlayback() {
   const [visible, setVisible] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(true);
-  const [seen, setSeen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       setVisible(entry.isIntersecting);
-      if (entry.isIntersecting) setSeen(true);
     }, {threshold: 0.05});
     observer.observe(ref.current);
     const onVisibility = () => setPageVisible(document.visibilityState !== 'hidden');
@@ -49,64 +47,25 @@ function usePlayback() {
     };
   }, []);
 
-  return {ref, seen, reducedMotion, running: visible && pageVisible && !reducedMotion};
+  return {ref, running: visible && pageVisible && !reducedMotion};
 }
 
 function ServiceTicker() {
-  const {ref, seen, running, reducedMotion} = usePlayback();
-  const trackRef = useRef(null);
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (reducedMotion) {
-      track.style.removeProperty('transform');
-      return;
-    }
-    if (!running) return;
-    let frame = 0;
-    let groupWidth = 0;
-    let start = 0;
-    const draw = () => {
-      frame = 0;
-      const distance = Math.max(0, window.scrollY - start) * 0.35;
-      track.style.transform = `translate3d(${-distance % groupWidth}px, 0, 0)`;
-    };
-    const measure = () => {
-      groupWidth = track.firstElementChild.getBoundingClientRect().width;
-      start = ref.current.getBoundingClientRect().top + window.scrollY - window.innerHeight;
-      draw();
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(draw);
-    };
-    const resize = new ResizeObserver(measure);
-    resize.observe(track.firstElementChild);
-    window.addEventListener('scroll', onScroll, {passive: true});
-    window.addEventListener('resize', measure);
-    measure();
-    return () => {
-      cancelAnimationFrame(frame);
-      resize.disconnect();
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', measure);
-    };
-  }, [running, reducedMotion]);
+  const {ref, running} = usePlayback();
 
   return (
     <div className={styles.ticker} ref={ref} data-running={running}>
       <div className={styles.tickerViewport} aria-hidden="true">
-        <div className={styles.tickerGlide} data-motion="ticker-glide" data-animate={seen}>
-          <div ref={trackRef} className={styles.tickerTrack} data-motion="ticker-track">
-            {[0, 1, 2].map((copy) => (
-              <div key={copy} className={styles.tickerGroup} data-motion="ticker-group">
-                {tickerItems.map((item) => (
-                  <span key={item} className={styles.tickerItem}>
-                    {item}<span className={styles.tickerDot} />
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+        <div className={styles.tickerTrack} data-motion="ticker-track">
+          {[0, 1].map((copy) => (
+            <div key={copy} className={styles.tickerGroup} data-motion="ticker-group">
+              {tickerItems.map((item) => (
+                <span key={item} className={styles.tickerItem}>
+                  {item}<span className={styles.tickerDot} />
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>

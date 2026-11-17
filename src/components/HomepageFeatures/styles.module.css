@@ -237,15 +237,14 @@
 .tickerTrack {
   display: flex;
   width: max-content;
+  animation: ticker-scroll 36s linear infinite;
 }
 
-.tickerGlide { width: max-content; }
-.tickerGlide[data-animate='true'] { animation: ticker-intro 2400ms linear both; }
-.ticker[data-running='false'] .tickerGlide { animation-play-state: paused; }
+.ticker[data-running='false'] .tickerTrack { animation-play-state: paused; }
 
-@keyframes ticker-intro {
+@keyframes ticker-scroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-64px); }
+  to { transform: translateX(-50%); }
 }
 
 .tickerGroup {
@@ -1262,13 +1261,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .heroGrid,
-  .tickerGlide[data-animate='true'],
+  .tickerTrack,
   .aiDemo[data-animate='true'] .aiReply,
   .aiDemo[data-animate='true'] .bubbleTyping,
   .aiDemo[data-animate='true'] .bubbleTyping span { animation: none; }
   .ticker { padding: 0.85rem 1rem; }
   .tickerViewport { mask-image: none; }
-  .tickerTrack, .tickerGlide { width: 100%; }
+  .tickerTrack { width: 100%; }
   .tickerGroup { min-width: 0; width: 100%; flex-wrap: wrap; gap: 0.75rem 1.5rem; padding: 0; }
   .tickerGroup + .tickerGroup, .bubbleTyping { display: none; }
 }

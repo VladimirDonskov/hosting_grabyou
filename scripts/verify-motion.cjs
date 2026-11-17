@@ -24,6 +24,22 @@ async function center(locator) {
 async function tickerX(track) {
   return track.evaluate(e => new DOMMatrixReadOnly(getComputedStyle(e).transform).m41);
 }
+async function seekTicker(track, fraction) {
+  return track.evaluate((element, fraction) => {
+    const animation = element.getAnimations().find(a => a.effect.target === element);
+    if (!animation) throw new Error('Ticker must have an autonomous CSS animation');
+    const timing = animation.effect.getTiming();
+    animation.pause();
+    animation.currentTime = Number(timing.duration) * fraction;
+    const groups = element.querySelectorAll('[data-motion="ticker-group"]');
+    return {
+      duration: Number(timing.duration), iterations: timing.iterations,
+      x: new DOMMatrixReadOnly(getComputedStyle(element).transform).m41,
+      first: groups[0].getBoundingClientRect().left, second: groups[1].getBoundingClientRect().left,
+      properties: animation.effect.getKeyframes().flatMap(({offset, easing, composite, computedOffset, ...properties}) => Object.keys(properties)),
+    };
+  }, fraction);
+}
 async function frameDelta(locator) {
   return locator.evaluate(async e => {
     const animation = e.getAnimations().find(a => a.effect.target === e);
@@ -51,28 +67,34 @@ async function frameDelta(locator) {
       const groups = page.locator('[data-motion="ticker-group"]');
       await center(region);
       await expect(region).toHaveAttribute('data-running', 'true');
-      await expect(groups).toHaveCount(3);
+      await expect(groups).toHaveCount(2);
       expect(await groups.nth(0).textContent()).toBe(await groups.nth(1).textContent());
-      const [first, second] = await Promise.all([groups.nth(0).boundingBox(), groups.nth(1).boundingBox()]);
+      const [first, second] = await groups.evaluateAll(elements => elements.map(e => {
+        const r = e.getBoundingClientRect();
+        return {x: r.x, width: r.width};
+      }));
       expect(Math.abs(first.width - second.width), 'copies have equal width').toBeLessThan(1);
       expect(Math.abs(second.x - first.x - first.width), 'copies meet without a gap').toBeLessThan(1);
       expect(first.width, 'one group fills the viewport').toBeGreaterThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth) - 1);
-      const glide = page.locator('[data-motion="ticker-glide"]');
-      const intro = await glide.evaluate(e => {
-        const animation = e.getAnimations().find(a => a.effect.target === e);
-        return {duration: animation.effect.getTiming().duration, iterations: animation.effect.getTiming().iterations};
-      });
-      expect(intro.duration).toBe(2400);
-      expect(intro.iterations, 'initial glide does not repeat').toBe(1);
-      expect((await frameDelta(glide)).delta, 'ticker also moves briefly while stationary').toBeGreaterThan(0);
-      const start = await tickerX(track);
-      await page.mouse.wheel(0, 80);
-      await expect.poll(() => tickerX(track), {message: 'wheel scroll moves ticker to the left'}).toBeLessThan(start);
-      const afterWheel = await tickerX(track);
-      await page.keyboard.press('ArrowDown');
-      await expect.poll(() => tickerX(track), {message: 'keyboard scroll also moves ticker to the left'}).toBeLessThan(afterWheel);
-      expect(await track.evaluate(e => e.getAnimations().length), 'ticker has no ambient loop').toBe(0);
-      expect(await page.getByRole('button', {name: /Приостановить|Продолжить/}).count(), 'no explicit pause controls').toBe(0);
+      const scrollPosition = await page.evaluate(() => scrollY);
+      const stationaryStart = await tickerX(track);
+      expect((await frameDelta(track)).delta, 'ticker advances while the page is stationary').toBeGreaterThan(0);
+      expect(await tickerX(track), 'stationary ticker travels right to left').toBeLessThan(stationaryStart);
+      expect(await page.evaluate(() => scrollY), 'ticker requires no scrolling').toBe(scrollPosition);
+      const start = await seekTicker(track, 0);
+      const middle = await seekTicker(track, 0.5);
+      const end = await seekTicker(track, 0.9999);
+      const next = await seekTicker(track, 1);
+      expect(start.duration).toBeGreaterThan(0);
+      expect(start.iterations, 'ticker repeats autonomously').toBe(Infinity);
+      expect(Math.abs(middle.x + first.width / 2), 'constant right-to-left travel').toBeLessThan(1);
+      expect(Math.abs(end.second - start.first), 'identical copy covers the loop seam').toBeLessThan(2);
+      expect(Math.abs(next.first - start.first), 'restart preserves the visible sequence').toBeLessThan(1);
+      expect(start.properties.every(property => property === 'transform'), 'ticker animates only transform').toBe(true);
+      expect(await region.getByRole('button').count(), 'ticker has no visible controls').toBe(0);
+      // Discard WAAPI instrumentation before screenshots and the independent AI checks.
+      await visit(page); await center(region);
+      await expect(region).toHaveAttribute('data-running', 'true');
       await region.screenshot({path: path.join(artifacts, `motion-ticker-${width}.png`)});
       await overflow(page);
 
@@ -125,8 +147,8 @@ async function frameDelta(locator) {
       await expect(dots.first().locator('..')).toHaveCSS('opacity', '0');
       await page.locator('[class*="aiChat"]').screenshot({path: path.join(artifacts, `motion-ai-${width}.png`)});
       await overflow(page);
-      expect(await page.evaluate(() => document.getAnimations().filter(a => a.effect.getComputedTiming().iterations === Infinity).length), 'no perpetual animation').toBe(0);
-      console.log(`PASS motion ${width}px: wheel/keyboard ticker; finite typing/reply; offscreen/hidden pause; no overflow`);
+      expect(await page.evaluate(() => document.getAnimations().filter(a => a.effect.getComputedTiming().iterations === Infinity && a.effect.target?.dataset.motion !== 'ticker-track').length), 'only the requested ticker can loop').toBe(0);
+      console.log(`PASS motion ${width}px: autonomous seamless ticker; finite typing/reply; offscreen/hidden pause; no overflow`);
     }
     for (const width of [390, 1440]) {
       const reduced = await browser.newContext({reducedMotion: 'reduce', colorScheme: 'dark', viewport: {width, height: 900}});
