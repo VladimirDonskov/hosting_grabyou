@@ -1,3 +1,4 @@
+import {useEffect, useRef, useState} from 'react';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -19,6 +20,88 @@ import {
   IconZap,
 } from '@site/src/components/brand/icons';
 import styles from './styles.module.css';
+
+function usePlayback() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {threshold: 0.05});
+    observer.observe(ref.current);
+    const onVisibility = () => setPageVisible(document.visibilityState !== 'hidden');
+    onVisibility();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
+  return {ref, paused, setPaused, running: visible && pageVisible && !paused};
+}
+
+function MotionToggle({paused, onToggle, subject, controls}) {
+  return (
+    <button
+      type="button"
+      className={styles.motionToggle}
+      aria-label={`${paused ? 'Продолжить' : 'Приостановить'} ${subject}`}
+      aria-controls={controls}
+      onClick={onToggle}>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        {paused
+          ? <path d="m9 5 11 7-11 7Z" fill="currentColor" />
+          : <path d="M8 6v12M16 6v12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />}
+      </svg>
+    </button>
+  );
+}
+
+function ServiceTicker() {
+  const {ref, paused, setPaused, running} = usePlayback();
+  return (
+    <div className={styles.ticker} ref={ref} data-running={running}>
+      <div className={styles.tickerViewport} aria-hidden="true">
+        <div className={styles.tickerTrack} id="grabyou-ticker" data-motion="ticker-track">
+          {[0, 1].map((copy) => (
+            <div key={copy} className={styles.tickerGroup} data-motion="ticker-group">
+              {tickerItems.map((item) => (
+                <span key={item} className={styles.tickerItem}>
+                  {item}<span className={styles.tickerDot} />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <MotionToggle paused={paused} onToggle={() => setPaused(!paused)} subject="бегущую строку" controls="grabyou-ticker" />
+    </div>
+  );
+}
+
+function AiConversation() {
+  const {ref, paused, setPaused, running} = usePlayback();
+  return (
+    <div ref={ref} className={styles.aiDemo} data-running={running}>
+      <div className={styles.aiDemoToolbar}>
+        <span>Пример диалога</span>
+        <MotionToggle paused={paused} onToggle={() => setPaused(!paused)} subject="анимацию диалога" controls="grabai-typing" />
+      </div>
+      <div className={styles.aiChat}>
+        <div className={`${styles.bubble} ${styles.bubbleUser}`}>хочу что-нибудь к чаю</div>
+        <div className={styles.bubble}>
+          Нашёл 6 предложений рядом: эклеры −35% в 400 м, круассаны −40% у метро…
+        </div>
+        <div className={`${styles.bubble} ${styles.bubbleUser}`}>букет подруге вечером до 1000 ₽</div>
+        <div className={`${styles.bubble} ${styles.bubbleTyping}`} id="grabai-typing" role="img" aria-label="Пример: GrabAI подбирает предложения">
+          {[0, 1, 2].map((dot) => <span key={dot} data-motion="typing-dot" />)}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─── Данные ─── */
 const tickerItems = [
@@ -131,8 +214,6 @@ export default function HomepageFeatures() {
   const paymentImg = useBaseUrl('/img/grabyou/payment-screen.webp');
   const aiPicImg = useBaseUrl('/img/grabyou/ai_pic.webp');
 
-  const ticker = tickerItems;
-
   return (
     <div className={styles.page}>
 
@@ -186,16 +267,7 @@ export default function HomepageFeatures() {
       </section>
 
       {/* ═══ ПОЛОСА СЕРВИСА ═══ */}
-      <div className={styles.ticker} aria-hidden="true">
-        <div className={styles.tickerTrack}>
-          {ticker.map((item, i) => (
-            <span key={i} className={styles.tickerItem}>
-              {item}
-              <span className={styles.tickerDot} />
-            </span>
-          ))}
-        </div>
-      </div>
+      <ServiceTicker />
 
       {/* ═══ ЦИФРЫ ═══ */}
       <section className={styles.statsSection}>
@@ -378,16 +450,7 @@ export default function HomepageFeatures() {
                   Не нужно листать категории. Напиши текстом что ищешь — GrabAI
                   разберёт запрос и найдёт подходящие предложения рядом с тобой.
                 </p>
-                <div className={styles.aiChat}>
-                  <div className={`${styles.bubble} ${styles.bubbleUser}`}>хочу что-нибудь к чаю</div>
-                  <div className={styles.bubble}>
-                    Нашёл 6 предложений рядом: эклеры −35% в 400 м, круассаны −40% у метро…
-                  </div>
-                  <div className={`${styles.bubble} ${styles.bubbleUser}`}>
-                    букет подруге вечером до 1000 ₽
-                  </div>
-
-                </div>
+                <AiConversation />
               </div>
               <div className={styles.aiVisual}>
                 <img src={aiPicImg} alt="GrabAI" loading="lazy" width="816" height="1713" />
