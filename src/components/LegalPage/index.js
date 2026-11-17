@@ -4,8 +4,9 @@ import consent from '@site/src/data/partner-consent.json';
 import styles from './styles.module.css';
 
 const revisionDate = new Intl.DateTimeFormat('ru-RU', {
-  day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-}).format(new Date(`${consent.version}T00:00:00Z`));
+  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  timeZone: 'Europe/Moscow',
+}).format(new Date(consent.version));
 
 export default function LegalPage({title, description, relatedTo, relatedLabel, children}) {
   return (
@@ -16,7 +17,7 @@ export default function LegalPage({title, description, relatedTo, relatedLabel, 
           <article className={styles.document}>
             <header className={styles.header}>
               <h1>{title}</h1>
-              <p className={styles.version}>Редакция <time dateTime={consent.version}>{revisionDate}</time></p>
+              <p className={styles.version}>Редакция <time dateTime={consent.version}>{revisionDate} МСК</time></p>
             </header>
             <div className={styles.content}>{children}</div>
           </article>
