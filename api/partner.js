@@ -5,6 +5,8 @@
 // режется), тогда форма шлёт заявку сюда с другого домена. Для этого — CORS.
 // Дополнительные адреса сайта можно задать в env ALLOWED_ORIGINS через запятую.
 
+const consentDocument = require('../src/data/partner-consent.json');
+
 const DEFAULT_ORIGINS = [
   'https://grabyou.ru',
   'https://www.grabyou.ru',
@@ -20,9 +22,10 @@ function allowedOrigins() {
   return [...DEFAULT_ORIGINS, ...extra];
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin || '';
   const allowed = allowedOrigins();
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Vary', 'Origin');
   if (allowed.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -44,10 +47,16 @@ export default async function handler(req, res) {
     return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
 
-  const { name, address, phone, email } = req.body || {};
+  const { name, address, phone, email, consent, policyRead, documentVersion } = req.body || {};
+  if (consent !== true || policyRead !== true) {
+    return res.status(400).json({ ok: false, error: 'Подтвердите согласие и ознакомление с политикой.' });
+  }
+  if (documentVersion !== consentDocument.version) {
+    return res.status(409).json({ ok: false, error: 'Обновите страницу и прочитайте актуальные документы.' });
+  }
 
   // Валидация
-  const clean = (v) => (typeof v === 'string' ? v.trim().slice(0, 300) : '');
+  const clean = (v) => (typeof v === 'string' && v.length <= 300 ? v.trim() : '');
   const data = {
     name: clean(name),
     address: clean(address),
@@ -56,7 +65,12 @@ export default async function handler(req, res) {
   };
 
   if (!data.name || !data.address || !data.phone || !data.email) {
-    return res.status(400).json({ ok: false, error: 'Заполните все поля' });
+    return res.status(400).json({ ok: false, error: 'Проверьте поля заявки.' });
+  }
+  const digits = data.phone.replace(/\D/g, '');
+  if (!/^[+\d\s().-]+$/.test(data.phone) || digits.length < 7 || digits.length > 15 ||
+      !/^[^\s@]+@[^\s@]+$/.test(data.email)) {
+    return res.status(400).json({ ok: false, error: 'Проверьте номер телефона и email.' });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -71,13 +85,16 @@ export default async function handler(req, res) {
     `🏪 Заведение: ${data.name}\n` +
     `📍 Адрес: ${data.address}\n` +
     `📞 Телефон: ${data.phone}\n` +
-    `✉️ Email: ${data.email}`;
+    `✉️ Email: ${data.email}\n\n` +
+    `Согласие дано. Ознакомление с политикой подтверждено.\n` +
+    `Редакция документов: ${consentDocument.version}\n` +
+    `Получено (UTC): ${new Date().toISOString()}`;
 
   try {
     const tg = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify({ chat_id: chatId, text, link_preview_options: {is_disabled: true} }),
     });
 
     const result = await tg.json();
@@ -89,4 +106,4 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(502).json({ ok: false, error: 'Delivery failed' });
   }
-}
+};

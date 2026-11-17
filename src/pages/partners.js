@@ -3,6 +3,7 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import consentDocument from '@site/src/data/partner-consent.json';
 import {
   IconBread,
   IconCheck,
@@ -97,14 +98,16 @@ const faq = [
   },
 ];
 
-/* ─── Модалка-анкета ─── */
+const emptyApplication = {name: '', address: '', phone: '+7', email: ''};
+
 function PartnerFormModal({open, motion, onClose}) {
   const {siteConfig} = useDocusaurusContext();
   const dialogRef = useRef(null);
   const successRef = useRef(null);
-  const [form, setForm] = useState({name: '', address: '', phone: '', email: ''});
+  const [form, setForm] = useState(emptyApplication);
   const [consent, setConsent] = useState(false);
-  const [status, setStatus] = useState('idle'); // idle | sending | success | error
+  const [policyRead, setPolicyRead] = useState(false);
+  const [status, setStatus] = useState('idle');
 
   useEffect(() => {
     if (!open) return;
@@ -127,8 +130,9 @@ function PartnerFormModal({open, motion, onClose}) {
     // Keep an unfinished draft (and an in-flight request) when closing.
     // A received application is cleared only after its confirmation is dismissed.
     if (status === 'success') {
-      setForm({name: '', address: '', phone: '', email: ''});
+      setForm(emptyApplication);
       setConsent(false);
+      setPolicyRead(false);
       setStatus('idle');
     }
     onClose();
@@ -142,7 +146,7 @@ function PartnerFormModal({open, motion, onClose}) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!consent || status === 'sending') return;
+    if (!consent || !policyRead || status === 'sending') return;
     const data = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()]));
     for (const [key, value] of Object.entries(data)) {
       const input = e.currentTarget.elements.namedItem(key);
@@ -162,11 +166,17 @@ function PartnerFormModal({open, motion, onClose}) {
       const res = await fetch(siteConfig.customFields.partnerApiUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data),
+        body: JSON.stringify({...data, consent, policyRead, documentVersion: consentDocument.version}),
         signal: controller.signal,
       });
       const json = await res.json().catch(() => ({}));
-      setStatus(res.ok && json.ok ? 'success' : 'error');
+      if (res.status === 409) {
+        setConsent(false);
+        setPolicyRead(false);
+        setStatus('outdated');
+      } else {
+        setStatus(res.ok && json.ok ? 'success' : 'error');
+      }
     } catch {
       setStatus('error');
     } finally {
@@ -215,8 +225,8 @@ function PartnerFormModal({open, motion, onClose}) {
               Стать партнёром
             </h2>
             <p id="partner-form-description" className={styles.modalSub}>
-              Оставьте заявку — мы свяжемся с вами и подробно расскажем про формат,
-              условия и первые шаги.
+              Укажите адрес торговой точки и свои рабочие контакты. Команда GrabYou
+              получит заявку через Telegram и свяжется с вами по вопросу подключения.
             </p>
 
             <form onSubmit={handleSubmit} className={styles.form} aria-busy={status === 'sending'}>
@@ -286,17 +296,32 @@ function PartnerFormModal({open, motion, onClose}) {
                 />
               </label>
 
-              <label className={styles.consent}>
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  disabled={status === 'sending'}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  required
-                />
-                <span>Даю согласие на обработку персональных данных</span>
-              </label>
+              <div className={styles.documents}>
+                <div className={styles.consent}>
+                  <input id="partner-consent" type="checkbox" aria-labelledby="partner-consent-label"
+                    checked={consent} disabled={status === 'sending'} required
+                    onChange={(e) => setConsent(e.target.checked)} />
+                  <span id="partner-consent-label">
+                    <label htmlFor="partner-consent">Даю </label>
+                    <Link to="/soglasie" target="_blank" rel="noopener noreferrer">согласие на обработку персональных данных</Link>
+                  </span>
+                </div>
+                <div className={styles.consent}>
+                  <input id="partner-policy" type="checkbox" aria-labelledby="partner-policy-label"
+                    checked={policyRead} disabled={status === 'sending'} required
+                    onChange={(e) => setPolicyRead(e.target.checked)} />
+                  <span id="partner-policy-label">
+                    <label htmlFor="partner-policy">Подтверждаю, что ознакомлен(-а) с </label>
+                    <Link to="/privacy" target="_blank" rel="noopener noreferrer">политикой обработки персональных данных</Link>
+                  </span>
+                </div>
+              </div>
 
+              {status === 'outdated' && (
+                <p className={styles.error} role="alert">
+                  Документы обновились. Перезагрузите страницу и ознакомьтесь с новой редакцией перед отправкой.
+                </p>
+              )}
               {status === 'error' && (
                 <p className={styles.error} role="alert">
                   Не получилось отправить. Попробуйте ещё раз или напишите нам в{' '}

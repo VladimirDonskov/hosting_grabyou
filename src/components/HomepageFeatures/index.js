@@ -5,6 +5,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import SpbMap from '@site/src/components/brand/SpbMap';
 import {
   IconBread,
+  IconArrow,
   IconCard,
   IconCheck,
   IconClock,
@@ -25,78 +26,115 @@ function usePlayback() {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
-  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(true);
+  const [seen, setSeen] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {threshold: 0.05});
+    const observer = new IntersectionObserver(([entry]) => {
+      setVisible(entry.isIntersecting);
+      if (entry.isIntersecting) setSeen(true);
+    }, {threshold: 0.05});
     observer.observe(ref.current);
     const onVisibility = () => setPageVisible(document.visibilityState !== 'hidden');
     onVisibility();
     document.addEventListener('visibilitychange', onVisibility);
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onPreference = () => setReducedMotion(preference.matches);
+    onPreference();
+    preference.addEventListener('change', onPreference);
     return () => {
       observer.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
+      preference.removeEventListener('change', onPreference);
     };
   }, []);
 
-  return {ref, paused, setPaused, running: visible && pageVisible && !paused};
-}
-
-function MotionToggle({paused, onToggle, subject, controls}) {
-  return (
-    <button
-      type="button"
-      className={styles.motionToggle}
-      aria-label={`${paused ? 'Продолжить' : 'Приостановить'} ${subject}`}
-      aria-controls={controls}
-      onClick={onToggle}>
-      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-        {paused
-          ? <path d="m9 5 11 7-11 7Z" fill="currentColor" />
-          : <path d="M8 6v12M16 6v12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />}
-      </svg>
-    </button>
-  );
+  return {ref, seen, reducedMotion, running: visible && pageVisible && !reducedMotion};
 }
 
 function ServiceTicker() {
-  const {ref, paused, setPaused, running} = usePlayback();
+  const {ref, seen, running, reducedMotion} = usePlayback();
+  const trackRef = useRef(null);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (reducedMotion) {
+      track.style.removeProperty('transform');
+      return;
+    }
+    if (!running) return;
+    let frame = 0;
+    let groupWidth = 0;
+    let start = 0;
+    const draw = () => {
+      frame = 0;
+      const distance = Math.max(0, window.scrollY - start) * 0.35;
+      track.style.transform = `translate3d(${-distance % groupWidth}px, 0, 0)`;
+    };
+    const measure = () => {
+      groupWidth = track.firstElementChild.getBoundingClientRect().width;
+      start = ref.current.getBoundingClientRect().top + window.scrollY - window.innerHeight;
+      draw();
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(draw);
+    };
+    const resize = new ResizeObserver(measure);
+    resize.observe(track.firstElementChild);
+    window.addEventListener('scroll', onScroll, {passive: true});
+    window.addEventListener('resize', measure);
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', measure);
+    };
+  }, [running, reducedMotion]);
+
   return (
     <div className={styles.ticker} ref={ref} data-running={running}>
       <div className={styles.tickerViewport} aria-hidden="true">
-        <div className={styles.tickerTrack} id="grabyou-ticker" data-motion="ticker-track">
-          {[0, 1].map((copy) => (
-            <div key={copy} className={styles.tickerGroup} data-motion="ticker-group">
-              {tickerItems.map((item) => (
-                <span key={item} className={styles.tickerItem}>
-                  {item}<span className={styles.tickerDot} />
-                </span>
-              ))}
-            </div>
-          ))}
+        <div className={styles.tickerGlide} data-motion="ticker-glide" data-animate={seen}>
+          <div ref={trackRef} className={styles.tickerTrack} data-motion="ticker-track">
+            {[0, 1, 2].map((copy) => (
+              <div key={copy} className={styles.tickerGroup} data-motion="ticker-group">
+                {tickerItems.map((item) => (
+                  <span key={item} className={styles.tickerItem}>
+                    {item}<span className={styles.tickerDot} />
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <MotionToggle paused={paused} onToggle={() => setPaused(!paused)} subject="бегущую строку" controls="grabyou-ticker" />
     </div>
   );
 }
 
 function AiConversation() {
-  const {ref, paused, setPaused, running} = usePlayback();
+  const {ref, running} = usePlayback();
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    if (running) setStarted(true);
+  }, [running]);
   return (
-    <div ref={ref} className={styles.aiDemo} data-running={running}>
-      <div className={styles.aiDemoToolbar}>
-        <span>Пример диалога</span>
-        <MotionToggle paused={paused} onToggle={() => setPaused(!paused)} subject="анимацию диалога" controls="grabai-typing" />
-      </div>
+    <div ref={ref} className={styles.aiDemo} data-running={running} data-animate={started}>
+      <p className={styles.aiDemoLabel}>Пример диалога</p>
       <div className={styles.aiChat}>
         <div className={`${styles.bubble} ${styles.bubbleUser}`}>хочу что-нибудь к чаю</div>
         <div className={styles.bubble}>
           Нашёл 6 предложений рядом: эклеры −35% в 400 м, круассаны −40% у метро…
         </div>
-        <div className={`${styles.bubble} ${styles.bubbleUser}`}>букет подруге вечером до 1000 ₽</div>
-        <div className={`${styles.bubble} ${styles.bubbleTyping}`} id="grabai-typing" role="img" aria-label="Пример: GrabAI подбирает предложения">
-          {[0, 1, 2].map((dot) => <span key={dot} data-motion="typing-dot" />)}
+        <div className={`${styles.bubble} ${styles.bubbleUser}`}>букет подруге вечером до 1000&nbsp;₽</div>
+        <div className={styles.aiResponse}>
+          <div className={`${styles.bubble} ${styles.bubbleTyping}`} aria-hidden="true">
+            {[0, 1, 2].map((dot) => <span key={dot} data-motion="typing-dot" />)}
+          </div>
+          <div className={`${styles.bubble} ${styles.aiReply}`} data-motion="ai-reply">
+              В цветочной в 600&nbsp;м есть букет за 890&nbsp;₽. Можно забрать сегодня с&nbsp;18:00 до&nbsp;20:00.
+          </div>
         </div>
       </div>
     </div>
@@ -240,8 +278,8 @@ export default function HomepageFeatures() {
                 забрать сегодня.
               </p>
               <div className={styles.heroButtons}>
-                <Link className="button button--primary button--lg" to="/download">
-                  Открыть GrabYou
+                <Link className={`button button--primary button--lg ${styles.primaryCta}`} to="/download">
+                  Открыть GrabYou <IconArrow size={18} />
                 </Link>
                 <Link className="button button--secondary button--lg" to="#how-it-works">
                   Как это работает
@@ -479,8 +517,8 @@ export default function HomepageFeatures() {
                 раньше остальных.
               </p>
               <div className={styles.ctaButtons}>
-                <Link className="button button--primary button--lg" to="/download">
-                  Открыть GrabYou
+                <Link className={`button button--primary button--lg ${styles.primaryCta}`} to="/download">
+                  Открыть GrabYou <IconArrow size={18} />
                 </Link>
                 <Link
                   className="button button--secondary button--lg"

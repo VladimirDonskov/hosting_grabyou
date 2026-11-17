@@ -119,6 +119,22 @@
   margin-top: 1.85rem;
 }
 
+.primaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.primaryCta svg {
+  flex-shrink: 0;
+  transition: transform 160ms var(--gy-ease);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .primaryCta:hover svg { transform: translateX(3px); }
+}
+
 /* ── телефоны ──
    Пара выстроена по ширине колонки: большой слева, второй — справа
    и ниже, перекрытие ~13%. Плашки привязаны к корпусам. */
@@ -204,12 +220,11 @@
 .ticker {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   background: var(--gy-ink-900);
   color: var(--gy-accent);
   border-bottom: var(--gy-stroke) solid var(--gy-border);
   overflow: hidden;
-  padding: 0.5rem 1rem 0.5rem 0;
+  padding: 1rem 0;
 }
 
 .tickerViewport {
@@ -222,8 +237,15 @@
 .tickerTrack {
   display: flex;
   width: max-content;
-  animation: ticker-travel 36s linear infinite;
-  animation-play-state: paused;
+}
+
+.tickerGlide { width: max-content; }
+.tickerGlide[data-animate='true'] { animation: ticker-intro 2400ms linear both; }
+.ticker[data-running='false'] .tickerGlide { animation-play-state: paused; }
+
+@keyframes ticker-intro {
+  from { transform: translateX(0); }
+  to { transform: translateX(-64px); }
 }
 
 .tickerGroup {
@@ -234,12 +256,6 @@
   min-width: 100vw;
   gap: 1.75rem;
   padding-right: 1.75rem;
-}
-
-.ticker[data-running='true'] .tickerTrack { animation-play-state: running; }
-
-@keyframes ticker-travel {
-  to { transform: translateX(-50%); }
 }
 
 .tickerItem {
@@ -259,33 +275,6 @@
   height: 5px;
   border-radius: 999px;
   background: var(--gy-accent);
-}
-
-.motionToggle {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 1px solid var(--gy-border-soft);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--gy-text);
-  cursor: pointer;
-  transition: background-color 160ms var(--gy-ease), transform 160ms var(--gy-ease);
-}
-
-.ticker .motionToggle {
-  color: var(--gy-accent);
-  border-color: color-mix(in srgb, var(--gy-accent) 35%, transparent);
-}
-
-.ticker .motionToggle:focus-visible { outline-color: var(--gy-accent); }
-
-@media (hover: hover) and (pointer: fine) {
-  .motionToggle:hover { background: color-mix(in srgb, var(--gy-accent) 15%, transparent); }
-  .motionToggle:active { transform: scale(0.96); }
 }
 
 /* ==========================================================================
@@ -839,11 +828,8 @@
 
 .aiDemo { margin-top: 1.25rem; }
 
-.aiDemoToolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+.aiDemoLabel {
+  margin: 0 0 0.75rem;
   color: var(--gy-text-dim);
   font-size: 0.85rem;
 }
@@ -874,6 +860,8 @@
   gap: 6px;
   min-height: 44px;
   padding-inline: 1rem;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bubbleTyping span {
@@ -881,13 +869,41 @@
   height: 7px;
   border-radius: 50%;
   background: var(--gy-text-dim);
-  animation: typing-wave 1400ms var(--gy-ease) infinite;
-  animation-play-state: paused;
 }
 
-.bubbleTyping span:nth-child(2) { animation-delay: 160ms; }
-.bubbleTyping span:nth-child(3) { animation-delay: 320ms; }
-.aiDemo[data-running='true'] .bubbleTyping span { animation-play-state: running; }
+.aiResponse {
+  display: grid;
+  align-items: start;
+}
+
+.aiResponse > * { grid-area: 1 / 1; }
+
+.aiDemo[data-animate='true'] .bubbleTyping {
+  animation: typing-finish 4200ms linear both;
+}
+
+.aiDemo[data-animate='true'] .bubbleTyping span {
+  animation: typing-wave 1200ms var(--gy-ease) 3;
+}
+
+.aiDemo[data-animate='true'] .aiReply {
+  animation: reply-enter 4200ms var(--gy-ease) both;
+}
+
+.aiDemo[data-animate='true'] .bubbleTyping span:nth-child(2) { animation-delay: 160ms; }
+.aiDemo[data-animate='true'] .bubbleTyping span:nth-child(3) { animation-delay: 320ms; }
+
+.aiDemo[data-animate='true'][data-running='false'] .aiResponse * { animation-play-state: paused; }
+
+@keyframes typing-finish {
+  0%, 80% { opacity: 1; }
+  93%, 100% { opacity: 0; }
+}
+
+@keyframes reply-enter {
+  0%, 86% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: none; }
+}
 
 @keyframes typing-wave {
   0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
@@ -1245,10 +1261,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroGrid, .tickerTrack, .bubbleTyping span { animation: none; }
+  .heroGrid,
+  .tickerGlide[data-animate='true'],
+  .aiDemo[data-animate='true'] .aiReply,
+  .aiDemo[data-animate='true'] .bubbleTyping,
+  .aiDemo[data-animate='true'] .bubbleTyping span { animation: none; }
   .ticker { padding: 0.85rem 1rem; }
   .tickerViewport { mask-image: none; }
-  .tickerTrack { width: 100%; }
+  .tickerTrack, .tickerGlide { width: 100%; }
   .tickerGroup { min-width: 0; width: 100%; flex-wrap: wrap; gap: 0.75rem 1.5rem; padding: 0; }
-  .tickerGroup + .tickerGroup, .motionToggle { display: none; }
+  .tickerGroup + .tickerGroup, .bubbleTyping { display: none; }
 }

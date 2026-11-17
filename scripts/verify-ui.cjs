@@ -5,6 +5,7 @@ const {chromium, expect} = require('playwright/test');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const {version} = require('../src/data/partner-consent.json');
 
 const target = (process.env.TARGET_URL || 'http://127.0.0.1:3001').replace(/\/$/, '');
 const artifacts = process.env.PW_ARTIFACT_DIR || path.join(os.tmpdir(), 'grabyou-audit');
@@ -44,6 +45,10 @@ async function visit(page, route = '') {
   const browser = await chromium.launch({headless: false});
   const errors = [];
   const context = await browser.newContext({colorScheme: 'light'});
+  const fontOrigins = new Set();
+  context.on('request', request => {
+    if (request.resourceType() === 'font') fontOrigins.add(new URL(request.url()).origin);
+  });
   context.on('page', p => p.on('pageerror', e => errors.push(e.message)));
   await context.route('**/*', route => route.request().method() === 'POST' ? route.abort('blockedbyclient') : route.continue());
   // Every API path is mocked at context level, including any configurable host.
@@ -52,7 +57,7 @@ async function visit(page, route = '') {
   try {
     for (const width of [390, 768, 1440]) {
       await page.setViewportSize({width, height: 900});
-      for (const [name, route] of [['home', ''], ['download', 'download'], ['partners', 'partners']]) {
+      for (const [name, route] of [['home', ''], ['download', 'download'], ['partners', 'partners'], ['privacy', 'privacy'], ['soglasie', 'soglasie']]) {
         await visit(page, route);
         await expect(page.locator('h1')).toHaveCount(1);
         for (const image of await page.locator('main img').all()) {
@@ -119,8 +124,35 @@ async function visit(page, route = '') {
     const submit = dialog.getByRole('button', {name: 'Отправить заявку'});
     await submit.click();
     expect(await page.locator('input[name="name"]').evaluate(e => e.validity.valueMissing)).toBe(true);
+    await expect(dialog.locator('input[name="phone"]')).toHaveValue('+7');
+    const consent = dialog.getByRole('checkbox', {name: /^Даю согласие/});
+    const policy = dialog.getByRole('checkbox', {name: /^Подтверждаю/});
+    await expect(consent).not.toBeChecked();
+    await expect(policy).not.toBeChecked();
+    for (const route of ['soglasie', 'privacy']) {
+      const [documentPage] = await Promise.all([
+        context.waitForEvent('page'),
+        dialog.locator(`a[href$="/${route}"]`).click(),
+      ]);
+      await documentPage.waitForLoadState();
+      await expect(documentPage.locator('main')).toContainText(
+        route === 'privacy' ? 'Донсков Владимир Дмитриевич' : 'Донскову Владимиру Дмитриевичу',
+      );
+      expect(new URL(documentPage.url()).origin).toBe(new URL(target).origin);
+      await documentPage.close();
+    }
+    await expect(dialog).toBeVisible();
+    await expect(consent).not.toBeChecked();
+    await expect(policy).not.toBeChecked();
+    await fill(page, fixtures['Demo data']);
+    await submit.click();
+    expect(await consent.evaluate(e => e.validity.valueMissing)).toBe(true);
+    await consent.check();
+    await submit.click();
+    expect(await policy.evaluate(e => e.validity.valueMissing)).toBe(true);
+    await policy.check();
     await fill(page, {...fixtures['Demo data'], name: '   '});
-    await dialog.getByRole('checkbox').check(); await submit.click();
+    await submit.click();
     expect(await page.locator('input[name="name"]').evaluate(e => e.validationMessage)).toContain('пробелов');
     await fill(page, {...fixtures['Demo data'], phone: 'не телефон'}); await submit.click();
     expect(await page.locator('input[name="phone"]').evaluate(e => e.validity.customError)).toBe(true);
@@ -146,16 +178,22 @@ async function visit(page, route = '') {
     await capture(page, 'after-form-loading', false);
     release();
     await expect(page.getByRole('heading', {name: 'Заявка отправлена!'})).toBeFocused();
-    expect(payload).toEqual(fixtures['Worst case']);
+    expect(payload).toEqual({...fixtures['Worst case'], consent: true, policyRead: true, documentVersion: version});
     await capture(page, 'after-form-success', false);
     await page.getByRole('button', {name: 'Отлично'}).click(); await trigger.click();
     await expect(page.locator('input[name="name"]')).toHaveValue('');
+    await expect(consent).not.toBeChecked();
+    await expect(policy).not.toBeChecked();
+    await fill(page, fixtures['Demo data']); await consent.check(); await policy.check();
+    await context.route('**/api/partner', route => route.fulfill({status: 409, contentType: 'application/json', body: '{"ok":false}'}));
+    await submit.click(); await expect(dialog.getByRole('alert')).toContainText('Документы обновились');
+    await expect(consent).not.toBeChecked(); await expect(policy).not.toBeChecked();
     await page.keyboard.press('Escape');
     console.log('PASS: FAQ, keyboard, dialog focus/draft, empty/invalid/long fields, API error/retry/loading/success');
 
     for (const width of [320, 768]) {
       await page.setViewportSize({width, height: 900});
-      for (const route of ['', 'download', 'partners']) {
+      for (const route of ['', 'download', 'partners', 'privacy', 'soglasie']) {
         await visit(page, route);
         await page.evaluate(() => document.documentElement.style.fontSize = '200%');
         await noOverflow(page);
@@ -173,6 +211,7 @@ async function visit(page, route = '') {
     await reducedPage.getByRole('button', {name: 'Стать партнёром', exact: true}).first().click();
     await expect(reducedPage.getByRole('dialog', {name: 'Стать партнёром', exact: true})).toHaveCSS('transform', 'none');
     await reduced.close();
+    expect([...fontOrigins], 'fonts are served by the site').toEqual([new URL(target).origin]);
     expect(errors).toEqual([]);
     console.log(`PASS: 320px, 200% text, dark/reduced motion, no JavaScript errors. Screenshots: ${artifacts}`);
 

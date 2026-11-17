@@ -299,6 +299,15 @@
 .faqOpen .faqPlus::after { transform: rotate(0); }
 .faqAWrap[hidden] { display: none; }
 
+@media (prefers-reduced-motion: no-preference) {
+  .faqPlus::after { transition: transform 180ms var(--gy-ease); }
+  .faqAWrap:not([hidden]) .faqA { animation: faq-answer-in 200ms var(--gy-ease); }
+}
+
+@keyframes faq-answer-in {
+  from { opacity: 0.45; transform: translateY(-4px); }
+}
+
 .faqA {
   margin: 0;
   padding: 0 3rem 1.25rem 0.25rem;
@@ -467,6 +476,13 @@
 .input:focus-visible { outline: 2px solid var(--gy-deep); outline-offset: 2px; }
 .input:read-only { opacity: 0.7; }
 
+.documents {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--gy-border-soft);
+}
+
 .consent {
   display: flex;
   align-items: flex-start;
@@ -476,14 +492,16 @@
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--gy-text-soft);
-  cursor: pointer;
 }
 
+.consent label, .consent input { cursor: pointer; }
+.consent a { color: var(--gy-deep); text-decoration: underline; }
+
 .consent input {
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
-  margin-top: 0.1rem;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
   accent-color: var(--gy-green-600);
 }
 

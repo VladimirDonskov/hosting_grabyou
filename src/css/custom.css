@@ -368,6 +368,11 @@ img {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  transition:
+    background-color 0.16s var(--gy-ease),
+    border-color 0.16s var(--gy-ease),
+    color 0.16s var(--gy-ease),
+    transform 0.16s var(--gy-ease);
 }
 
 .navbar__link:hover {
@@ -417,24 +422,54 @@ img {
   transform: translateY(-2px);
 }
 
+.navbar__link.navbar-cta:active {
+  transform: translate(0, 0);
+  box-shadow: 1px 1px 0 var(--gy-border);
+}
+
+.navbar-telegram-link:active { transform: translateY(0); }
+
 .navbar-telegram-link svg {
   width: 19px;
   height: 19px;
 }
 
 /* тумблер темы */
-.navbar__items--right [class*='toggleButton'] {
+.navbar [class*='toggle_'] {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+.navbar__items--right > [class*='colorModeToggle'] { margin-left: 0.4rem; }
+
+.navbar [class*='toggleButton'] {
   width: 44px;
   height: 44px;
   border: var(--gy-stroke) solid var(--gy-border);
   border-radius: 999px;
   color: var(--gy-text);
-  transition: background-color 0.16s var(--gy-ease);
+  transition: background-color 0.16s var(--gy-ease), color 0.16s var(--gy-ease);
 }
 
-.navbar__items--right [class*='toggleButton']:hover {
+.navbar [class*='toggleButton']:hover {
   background: var(--gy-accent);
   color: var(--gy-ink-900);
+}
+
+.navbar [class*='toggleButton']:active { background: var(--gy-accent-hover); }
+
+.navbar__toggle, .navbar-sidebar__close {
+  border-radius: 50%;
+  color: var(--gy-text);
+  transition: background-color 0.16s var(--gy-ease), color 0.16s var(--gy-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navbar__toggle:hover, .navbar-sidebar__close:hover {
+    background: var(--gy-accent);
+    color: var(--gy-ink-900);
+  }
 }
 
 .navbar-sidebar {
@@ -614,6 +649,8 @@ table {
   .navbar__brand { margin-inline: 0.5rem auto; }
   .navbar__logo img { height: 36px; }
   .navbar__toggle, .navbar-sidebar__close {
+    display: grid;
+    place-items: center;
     width: 44px;
     height: 44px;
   }
@@ -674,4 +711,4 @@ table {
 }
 
 .gyMobileMenu .navbar-sidebar__item { width: 100%; }
-.gyMobileMenu .navbar-sidebar__close svg g { stroke: var(--gy-text); }
+.gyMobileMenu .navbar-sidebar__close svg g { stroke: currentColor; }

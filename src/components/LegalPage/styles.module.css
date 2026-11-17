@@ -1,0 +1,85 @@
+.page {
+  padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(3rem, 7vw, 5rem);
+  background: var(--gy-bg);
+}
+
+.container { max-width: 58rem; }
+
+.page a,
+.page a:visited,
+.page a:hover { color: var(--gy-deep); }
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.document {
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid var(--gy-border-soft);
+  border-radius: var(--gy-radius-lg);
+  background: var(--gy-surface);
+}
+
+.header { margin-bottom: 2rem; }
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.version {
+  margin: 1rem 0 0;
+  color: var(--gy-text-dim);
+  font-size: 0.875rem;
+}
+
+.content {
+  max-width: 74ch;
+  color: var(--gy-text-soft);
+  font-size: 1rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.content h2 {
+  margin: 2rem 0 0.75rem;
+  font-family: var(--gy-font-base);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  color: var(--gy-text);
+}
+
+.content p { margin: 0 0 1rem; }
+.content ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+.content li + li { margin-top: 0.45rem; }
+.content a { text-decoration: underline; }
+.content strong { color: var(--gy-text); }
+
+.related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.related a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+@media (max-width: 620px) {
+  .document { border-radius: 14px; }
+  .related { flex-direction: column; align-items: flex-start; }
+}

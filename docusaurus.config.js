@@ -47,18 +47,6 @@ const config = {
   headTags: [
     {
       tagName: 'link',
-      attributes: {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
-    },
-    {
-      tagName: 'link',
-      attributes: {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossorigin: 'anonymous',
-      },
-    },
-    {
-      tagName: 'link',
       attributes: {rel: 'apple-touch-icon', href: `${BASE_URL}img/brand/apple-touch-icon.png`},
     },
     {
@@ -80,7 +68,7 @@ const config = {
     {
       // Свободные фолбэки фирменной пары Cygre / Bulatov SP Demo.
       // См. static/fonts/README.md
-      href: 'https://fonts.googleapis.com/css2?family=Onest:wght@300..900&family=Unbounded:wght@300..900&family=JetBrains+Mono:wght@400;700&display=swap',
+      href: `${BASE_URL}fonts/fallback-fonts.css`,
       type: 'text/css',
     },
   ],
@@ -153,6 +141,7 @@ const config = {
               {label: 'Как это работает', to: '/#how-it-works'},
               {label: 'Скачать приложение', to: '/download'},
               {label: 'Партнёрам', to: '/partners'},
+              {label: 'Политика обработки персональных данных', to: '/privacy'},
             ],
           },
           {

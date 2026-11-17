@@ -26,6 +26,9 @@ Thumbs.db
 
 # шрифты по лицензии — кладутся локально, см. static/fonts/README.md
 /static/fonts/*.woff2
+!/static/fonts/onest-*.woff2
+!/static/fonts/unbounded-*.woff2
+!/static/fonts/jetbrainsmono-*.woff2
 /static/fonts/*.woff
 /static/fonts/*.ttf
 /static/fonts/*.otf

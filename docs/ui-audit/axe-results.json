@@ -19,6 +19,18 @@
   },
   {
     "width": 390,
+    "theme": "light",
+    "route": "/privacy",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "route": "/soglasie",
+    "violations": []
+  },
+  {
+    "width": 390,
     "theme": "dark",
     "route": "/",
     "violations": []
@@ -36,6 +48,18 @@
     "violations": []
   },
   {
+    "width": 390,
+    "theme": "dark",
+    "route": "/privacy",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "route": "/soglasie",
+    "violations": []
+  },
+  {
     "width": 1440,
     "theme": "light",
     "route": "/",
@@ -55,6 +79,18 @@
   },
   {
     "width": 1440,
+    "theme": "light",
+    "route": "/privacy",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "route": "/soglasie",
+    "violations": []
+  },
+  {
+    "width": 1440,
     "theme": "dark",
     "route": "/",
     "violations": []
@@ -69,6 +105,18 @@
     "width": 1440,
     "theme": "dark",
     "route": "/partners",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "route": "/privacy",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "route": "/soglasie",
     "violations": []
   }
 ]
